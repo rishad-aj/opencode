@@ -321,11 +321,39 @@ async function listWorkspaceFiles(dir: string, baseDir = dir): Promise<Array<{ p
 
 async function startServer() {
   const app = express();
+
+  // Enable CORS so static github.io deployments can connect directly to this OpenCode gateway
+  app.use('/api', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+      res.status(204).end();
+      return;
+    }
+    next();
+  });
+
   app.use(express.json({ limit: '4mb' }));
 
   // Warm up OpenCode daemon immediately on boot
   startOpenCodeDaemon().catch((err) => {
     console.error('Failed to pre-warm OpenCode daemon:', err);
+  });
+
+  // Health check endpoint for github.io remote gateway verification
+  app.get('/api/health', async (_req, res) => {
+    try {
+      await startOpenCodeDaemon();
+      res.json({
+        ok: true,
+        engine: 'OpenCode v2.2.1 Native Runtime',
+        provider: 'opencode (OpenCode Zen Free Gateway)',
+        modelsCount: FREE_OPENCODE_MODELS.length
+      });
+    } catch (err: any) {
+      res.status(500).json({ ok: false, error: err?.message || 'Daemon unavailable' });
+    }
   });
 
   // 1. Get verified free OpenCode models + daemon info

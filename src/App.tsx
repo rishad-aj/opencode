@@ -71,15 +71,54 @@ interface WorkspaceFile {
 }
 
 const STORAGE_KEY = 'opas_labs_opencode_threads_v1';
+const GATEWAY_STORAGE_KEY = 'opas_labs_opencode_gateway_v1';
+const DEFAULT_CLOUD_GATEWAY = 'https://ais-pre-moyn6njhb5ohau3ewpjnlf-915588455808.asia-east1.run.app';
 
-// Exact 39-column x 4-row glyph matrix from official OpenCode TUI (vy.left + " " + vy.right)
-// Cols 0..18 = "open", Col 19 = " ", Cols 20..38 = "code" (with '▄' at col 33 over the right stem of 'd')
-const LOGO_ROWS = [
-  '                                 ▄     ',
-  '█▀▀█ █▀▀█ █▀▀█ █▀▀▄ █▀▀▀ █▀▀█ █▀▀█ █▀▀█',
-  '█░░█ █░░█ █^^^ █░░█ █░░░ █░░█ █░░█ █^^^',
-  '▀▀▀▀ █▀▀▀ ▀▀▀▀ ▀~~▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀'
-];
+const GITHUB_WORKFLOW_YAML = `name: Deploy OPAS Labs OpenCode to GitHub Pages
+
+on:
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm install
+      - name: Build static bundle for github.io
+        run: |
+          npm run build
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./dist"
+
+  deploy:
+    environment:
+      name: github-pages
+      url: \${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4`;
 
 const OPENCODE_PLACEHOLDERS = [
   'Fix a TODO in the codebase',
@@ -88,12 +127,43 @@ const OPENCODE_PLACEHOLDERS = [
   'Write a TypeScript sliding-window rate limiter'
 ];
 
+// Official Original OpenCode Vector Wordmark SVG (from opencode binary `class="wordmark" viewBox="0 0 234 42"`)
+function OriginalOpenCodeWordmarkSvg({ className = 'h-10 sm:h-12 w-auto' }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 234 42"
+      fill="none"
+      aria-label="OpenCode"
+      role="img"
+      className={className}
+    >
+      <path d="M18 30H6V18H18V30Z" fill="#343434" />
+      <path d="M18 12H6V30H18V12ZM24 36H0V6H24V36Z" fill="#7e7e7e" />
+      <path d="M48 30H36V18H48V30Z" fill="#343434" />
+      <path d="M36 30H48V12H36V30ZM54 36H36V42H30V6H54V36Z" fill="#7e7e7e" />
+      <path d="M84 24V30H66V24H84Z" fill="#343434" />
+      <path d="M84 24H66V30H84V36H60V6H84V24ZM66 18H78V12H66V18Z" fill="#7e7e7e" />
+      <path d="M108 36H96V18H108V36Z" fill="#343434" />
+      <path d="M108 12H96V36H90V6H108V12ZM114 36H108V12H114V36Z" fill="#7e7e7e" />
+      <path d="M144 30H126V18H144V30Z" fill="#343434" />
+      <path d="M144 12H126V30H144V36H120V6H144V12Z" fill="#ededed" />
+      <path d="M168 30H156V18H168V30Z" fill="#343434" />
+      <path d="M168 12H156V30H168V12ZM174 36H150V6H174V36Z" fill="#ededed" />
+      <path d="M198 30H186V18H198V30Z" fill="#343434" />
+      <path d="M198 12H186V30H198V12ZM204 36H180V6H198V0H204V36Z" fill="#ededed" />
+      <path d="M234 24V30H216V24H234Z" fill="#343434" />
+      <path d="M216 12V18H228V12H216ZM234 24H216V30H234V36H210V6H234V24Z" fill="#ededed" />
+    </svg>
+  );
+}
+
 function OpasOpenCodeLogo() {
   return (
     <div className="select-none flex flex-col items-center">
-      <div className="inline-flex flex-col">
-        {/* opaslabs brand header aligned strictly to the 39-column logo edges */}
-        <div className="w-full flex items-center justify-between mb-1.5 font-mono text-xs">
+      <div className="inline-flex flex-col items-stretch">
+        {/* opaslabs header aligned cleanly above the original OpenCode SVG logo */}
+        <div className="w-full flex items-center justify-between mb-2.5 font-mono text-xs">
           <div className="flex items-center gap-1.5">
             <span className="text-[#fab283] font-bold tracking-wider uppercase">
               opaslabs
@@ -106,75 +176,8 @@ function OpasOpenCodeLogo() {
           <span className="text-[11px] text-[#808080]">free zen · no login</span>
         </div>
 
-        {/* Strict 39-column x 4-row CSS Grid guarantees sub-pixel column alignment across all OS/browsers */}
-        <div
-          role="img"
-          aria-label="opaslabs opencode logo"
-          className="inline-grid grid-cols-[repeat(39,1ch)] font-mono text-xs sm:text-sm md:text-[15px] leading-none"
-        >
-          {LOGO_ROWS.map((row, rowIdx) =>
-            Array.from(row).map((ch, colIdx) => {
-              const isRightHalf = colIdx >= 20;
-              const fgBase = isRightHalf ? 'text-[#eeeeee]' : 'text-[#808080]';
-              const shadowBg = isRightHalf ? 'bg-[#262626]' : 'bg-[#1a1a1a]';
-              const shadowFg = isRightHalf ? 'text-[#333333]' : 'text-[#242424]';
-
-              if (ch === ' ') {
-                return (
-                  <span
-                    key={`${rowIdx}-${colIdx}`}
-                    className="w-[1ch] h-[1.12em] flex items-center justify-center opacity-0 pointer-events-none"
-                    aria-hidden="true"
-                  >
-                    █
-                  </span>
-                );
-              }
-
-              if (ch === '░') {
-                return (
-                  <span
-                    key={`${rowIdx}-${colIdx}`}
-                    className={`w-[1ch] h-[1.12em] flex items-center justify-center ${shadowFg} ${shadowBg}`}
-                  >
-                    ░
-                  </span>
-                );
-              }
-
-              if (ch === '^') {
-                return (
-                  <span
-                    key={`${rowIdx}-${colIdx}`}
-                    className={`w-[1ch] h-[1.12em] flex items-center justify-center ${fgBase} ${shadowBg}`}
-                  >
-                    ▀
-                  </span>
-                );
-              }
-
-              if (ch === '~') {
-                return (
-                  <span
-                    key={`${rowIdx}-${colIdx}`}
-                    className={`w-[1ch] h-[1.12em] flex items-center justify-center ${shadowFg}`}
-                  >
-                    ▀
-                  </span>
-                );
-              }
-
-              return (
-                <span
-                  key={`${rowIdx}-${colIdx}`}
-                  className={`w-[1ch] h-[1.12em] flex items-center justify-center ${fgBase}`}
-                >
-                  {ch}
-                </span>
-              );
-            })
-          )}
-        </div>
+        {/* Official Original OpenCode Vector Logo */}
+        <OriginalOpenCodeWordmarkSvg className="h-11 sm:h-[52px] md:h-[58px] w-auto" />
       </div>
     </div>
   );
@@ -186,6 +189,7 @@ const SLASH_COMMANDS = [
   { cmd: '/new', desc: 'Start a new session', keybind: 'ctrl+n' },
   { cmd: '/files', desc: 'Inspect sandbox workspace files', keybind: 'ctrl+f' },
   { cmd: '/sessions', desc: 'Browse saved sessions', keybind: 'ctrl+s' },
+  { cmd: '/github', desc: 'Host as github.io & configure gateway', keybind: 'ctrl+g' },
   { cmd: '/clear', desc: 'Clear current session transcript', keybind: 'ctrl+l' }
 ];
 
@@ -326,7 +330,31 @@ export default function App() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [expandedReasoning, setExpandedReasoning] = useState<Record<string, boolean>>({});
   const [showModelModal, setShowModelModal] = useState(false);
+  const [showGithubModal, setShowGithubModal] = useState(false);
   const [modelSearch, setModelSearch] = useState('');
+  const [copiedWorkflow, setCopiedWorkflow] = useState(false);
+
+  // Automatic github.io static hosting detection + remote OpenCode gateway URL
+  const [apiBaseUrl, setApiBaseUrl] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(GATEWAY_STORAGE_KEY);
+      if (saved !== null) return saved.replace(/\/+$/, '');
+    } catch {
+      // ignore
+    }
+    if (typeof window !== 'undefined' && window.location.hostname.endsWith('github.io')) {
+      return DEFAULT_CLOUD_GATEWAY;
+    }
+    return '';
+  });
+  const [gatewayInput, setGatewayInput] = useState<string>(() =>
+    apiBaseUrl || DEFAULT_CLOUD_GATEWAY
+  );
+
+  const buildApiUrl = (routePath: string, baseOverride?: string) => {
+    const base = (baseOverride ?? apiBaseUrl).replace(/\/+$/, '');
+    return base ? `${base}${routePath}` : routePath;
+  };
 
   // Workspace Sandbox state
   const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([]);
@@ -364,15 +392,41 @@ export default function App() {
   }, [threads]);
 
   useEffect(() => {
-    fetch('/api/models')
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data?.models) && data.models.length > 0) {
+    let cancelled = false;
+    async function loadModels() {
+      try {
+        const res = await fetch(buildApiUrl('/api/models'));
+        const contentType = res.headers.get('content-type') || '';
+        if (!res.ok || !contentType.includes('application/json')) {
+          throw new Error('Static host detected');
+        }
+        const data = await res.json();
+        if (!cancelled && Array.isArray(data?.models) && data.models.length > 0) {
           setModels(data.models);
         }
-      })
-      .catch(() => {});
-  }, []);
+      } catch {
+        // When hosted statically on github.io without a local backend, fallback to live Cloud Gateway
+        if (!apiBaseUrl) {
+          try {
+            const fallbackRes = await fetch(`${DEFAULT_CLOUD_GATEWAY}/api/models`);
+            if (fallbackRes.ok) {
+              const fallbackData = await fallbackRes.json();
+              if (!cancelled && Array.isArray(fallbackData?.models)) {
+                setApiBaseUrl(DEFAULT_CLOUD_GATEWAY);
+                setModels(fallbackData.models);
+              }
+            }
+          } catch {
+            // keep embedded default models list
+          }
+        }
+      }
+    }
+    loadModels();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBaseUrl]);
 
   // Global keyboard shortcuts matching OpenCode TUI
   useEffect(() => {
@@ -380,6 +434,9 @@ export default function App() {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm') {
         e.preventDefault();
         setShowModelModal((prev) => !prev);
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        setShowGithubModal((prev) => !prev);
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         handleNewSession();
@@ -395,6 +452,8 @@ export default function App() {
       } else if (e.key === 'Escape') {
         if (showModelModal) {
           setShowModelModal(false);
+        } else if (showGithubModal) {
+          setShowGithubModal(false);
         } else if (isStreaming) {
           handleStopGeneration();
         }
@@ -402,19 +461,19 @@ export default function App() {
     };
     window.addEventListener('keydown', onGlobalKeyDown);
     return () => window.removeEventListener('keydown', onGlobalKeyDown);
-  }, [showModelModal, isStreaming, selectedModel.id, activeThread?.agent]);
+  }, [showModelModal, showGithubModal, isStreaming, selectedModel.id, activeThread?.agent]);
 
   const fetchWorkspaceFiles = async (selectPath?: string) => {
     setLoadingFiles(true);
     try {
-      const res = await fetch('/api/workspace/files');
+      const res = await fetch(buildApiUrl('/api/workspace/files'));
       const data = await res.json();
       if (Array.isArray(data?.files)) {
         setWorkspaceFiles(data.files);
         const target = selectPath || selectedFilePath || data.files[0]?.path;
         if (target) {
           setSelectedFilePath(target);
-          const fRes = await fetch(`/api/workspace/file?path=${encodeURIComponent(target)}`);
+          const fRes = await fetch(buildApiUrl(`/api/workspace/file?path=${encodeURIComponent(target)}`));
           if (fRes.ok) {
             const fData = await fRes.json();
             setSelectedFileContent(fData.content || '');
@@ -517,6 +576,9 @@ export default function App() {
       case '/files':
         setActiveNav('files');
         break;
+      case '/github':
+        setShowGithubModal(true);
+        break;
       case '/clear':
         handleClearCurrentSession();
         break;
@@ -529,7 +591,7 @@ export default function App() {
     abortControllerRef.current?.abort();
     setIsStreaming(false);
     if (activeThread?.opencodeSessionID) {
-      fetch('/api/chat/interrupt', {
+      fetch(buildApiUrl('/api/chat/interrupt'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionID: activeThread.opencodeSessionID })
@@ -593,7 +655,7 @@ export default function App() {
     abortControllerRef.current = controller;
 
     try {
-      const response = await fetch('/api/chat/stream', {
+      let response = await fetch(buildApiUrl('/api/chat/stream'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -604,6 +666,23 @@ export default function App() {
         }),
         signal: controller.signal
       });
+
+      const contentType = response.headers.get('content-type') || '';
+      if ((!response.ok || contentType.includes('text/html')) && !apiBaseUrl) {
+        // Automatic fallback for github.io static deployments
+        setApiBaseUrl(DEFAULT_CLOUD_GATEWAY);
+        response = await fetch(`${DEFAULT_CLOUD_GATEWAY}/api/chat/stream`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: text,
+            modelId: currentModel.id,
+            sessionID: activeThread.opencodeSessionID,
+            agent: currentAgent
+          }),
+          signal: controller.signal
+        });
+      }
 
       if (!response.ok || !response.body) {
         const errText = await response.text();
@@ -976,16 +1055,18 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-[#0a0a0a] text-[#eeeeee] font-mono">
       {/* Top Bar Contract: 3 zones separated by gap-8 */}
       <header className="flex items-center justify-between gap-8 px-6 py-2.5 border-b border-[#1e1e1e] bg-[#0a0a0a] sticky top-0 z-30">
-        {/* Zone 1: Wordmark */}
+        {/* Zone 1: Wordmark with Original OpenCode Vector Logo */}
         <a
           href="#workspace"
           onClick={(e) => {
             e.preventDefault();
             setActiveNav('workspace');
           }}
-          className="text-xs font-mono font-bold tracking-wider text-[#eeeeee] whitespace-nowrap shrink-0"
+          className="flex items-center gap-2 text-xs font-mono font-bold tracking-wider text-[#eeeeee] whitespace-nowrap shrink-0"
         >
-          <span className="text-[#fab283]">opaslabs</span> / opencode
+          <span className="text-[#fab283]">opaslabs</span>
+          <span className="text-[#4a4a4a]" aria-hidden="true">/</span>
+          <OriginalOpenCodeWordmarkSvg className="h-3.5 w-auto" />
         </a>
 
         {/* Zone 2: 4 concise single-line text links */}
@@ -1620,6 +1701,15 @@ export default function App() {
             <span className="text-[#eeeeee]">1 sandbox</span>
             <span className="text-[#808080]">/files</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setShowGithubModal(true)}
+            className="flex items-center gap-1.5 hover:text-[#eeeeee] transition-colors"
+          >
+            <span className="text-[#fab283]">⊙</span>
+            <span className="text-[#eeeeee]">github.io</span>
+            <span className="text-[#808080]">/github</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -1628,6 +1718,138 @@ export default function App() {
           <span>v2.2.1</span>
         </div>
       </footer>
+
+      {/* GitHub Pages (`github.io`) Hosting & Gateway Dialog */}
+      {showGithubModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setShowGithubModal(false)}
+        >
+          <div
+            className="w-full max-w-2xl border border-[#3c3c3c] bg-[#141414] shadow-2xl overflow-hidden font-mono"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#262626] bg-[#1a1a1a]">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-bold text-[#eeeeee]">Host on GitHub Pages (github.io)</span>
+                <span className="text-[#808080]">· opaslabs / opencode</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGithubModal(false)}
+                className="text-xs text-[#808080] hover:text-[#eeeeee]"
+              >
+                esc
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4 max-h-[80vh] overflow-y-auto text-xs">
+              <div className="p-3 bg-[#0a0a0a] border border-[#262626] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#fab283] font-semibold">
+                    1. Ready for *.github.io Static Deployment
+                  </span>
+                  <span className="text-[#7fd88f]">configured</span>
+                </div>
+                <p className="text-[#808080] leading-relaxed">
+                  This repository includes <code className="text-[#eeeeee]">base: './'</code> in{' '}
+                  <code className="text-[#eeeeee]">vite.config.ts</code>,{' '}
+                  <code className="text-[#eeeeee]">public/.nojekyll</code>, and{' '}
+                  <code className="text-[#eeeeee]">.github/workflows/deploy.yml</code>. Pushing to{' '}
+                  <code className="text-[#eeeeee]">main</code> automatically builds and publishes the
+                  app to <code className="text-[#eeeeee]">https://&lt;username&gt;.github.io/&lt;repo&gt;/</code>.
+                </p>
+              </div>
+
+              <div className="p-3 bg-[#0a0a0a] border border-[#262626] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#fab283] font-semibold">
+                    2. OpenCode Zen Remote Gateway (for static github.io pages)
+                  </span>
+                  <span className="text-[#808080]">CORS enabled</span>
+                </div>
+                <p className="text-[#808080] leading-relaxed">
+                  Since GitHub Pages serves static files only, your <code className="text-[#eeeeee]">github.io</code>{' '}
+                  page connects automatically to this live OpenCode v2.2.1 backend (or any{' '}
+                  <code className="text-[#eeeeee]">opencode serve</code> gateway URL you specify below):
+                </p>
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={gatewayInput}
+                    onChange={(e) => setGatewayInput(e.target.value)}
+                    placeholder={DEFAULT_CLOUD_GATEWAY}
+                    className="flex-1 px-3 py-1.5 bg-[#141414] border border-[#2e2e2e] text-xs text-[#eeeeee] focus:outline-none focus:border-[#fab283]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cleaned = gatewayInput.trim().replace(/\/+$/, '');
+                      setApiBaseUrl(cleaned);
+                      try {
+                        localStorage.setItem(GATEWAY_STORAGE_KEY, cleaned);
+                      } catch {
+                        // ignore
+                      }
+                      setShowGithubModal(false);
+                    }}
+                    className="px-3 py-1.5 bg-[#fab283] text-[#0a0a0a] font-semibold hover:opacity-90 transition-opacity whitespace-nowrap shrink-0"
+                  >
+                    Save Gateway
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGatewayInput(DEFAULT_CLOUD_GATEWAY);
+                      setApiBaseUrl('');
+                      try {
+                        localStorage.removeItem(GATEWAY_STORAGE_KEY);
+                      } catch {
+                        // ignore
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-[#1e1e1e] text-[#808080] hover:text-[#eeeeee] transition-colors whitespace-nowrap shrink-0"
+                  >
+                    Auto
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#eeeeee] font-semibold">
+                    .github/workflows/deploy.yml (included in project)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(GITHUB_WORKFLOW_YAML);
+                      setCopiedWorkflow(true);
+                      setTimeout(() => setCopiedWorkflow(false), 1800);
+                    }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-[#1e1e1e] hover:bg-[#2a2a2a] text-[#eeeeee] transition-colors"
+                  >
+                    {copiedWorkflow ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-[#7fd88f]" />
+                        <span>copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>copy workflow</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <pre className="p-3 bg-[#0a0a0a] border border-[#262626] text-[11px] text-[#808080] overflow-x-auto leading-relaxed">
+                  {GITHUB_WORKFLOW_YAML}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Authentic OpenCode TUI Dialog (`Select Model` / `ctrl+m`) */}
       {showModelModal && (
