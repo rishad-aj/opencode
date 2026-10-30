@@ -313,83 +313,46 @@ function OpenCodeWordmark({ className = 'h-4 w-auto' }: { className?: string }) 
 }
 
 /**
- * Exact 1:1 port of `function _U()` from the official OpenCode v2.2.1 TUI binary.
- * Renders `vy.left` ("open") in muted text with 25% shadow cells and `vy.right` ("code") in bold fg with 25% shadow cells.
+ * Exact 1:1 port of `function _U()` (`vy.left` + `vy.right`) from the official OpenCode v2.2.1 TUI binary.
+ * Renders the 39x7 half-block terminal matrix with `shapeRendering="crispEdges"` so every `█`, `▀`, `▄`,
+ * and 25% shadow cell (`_`, `^`, `~`) aligns with zero font-metric seams across all TUI themes.
  */
-const TUI_LOGO_LEFT = [
-  '                   ',
-  '█▀▀█ █▀▀█ █▀▀█ █▀▀▄',
-  '█__█ █__█ █^^^ █__█',
-  '▀▀▀▀ █▀▀▀ ▀▀▀▀ ▀~~▀'
-];
-const TUI_LOGO_RIGHT = [
-  '             ▄     ',
-  '█▀▀▀ █▀▀█ █▀▀█ █▀▀█',
-  '█___ █__█ █__█ █^^^',
-  '▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀'
-];
-
-function renderTuiLogoLine(line: string, side: 'left' | 'right') {
-  const fgVar = side === 'left' ? 'var(--oc-fg-muted)' : 'var(--oc-fg)';
-  const shadowVar = side === 'left' ? 'var(--oc-shadow-left)' : 'var(--oc-shadow-right)';
-  const weight = side === 'right' ? 700 : 400;
-
-  return Array.from(line).map((ch, idx) => {
-    if (ch === '_') {
-      return (
-        <span
-          key={idx}
-          style={{ backgroundColor: shadowVar, color: fgVar, fontWeight: weight }}
-        >
-          {' '}
-        </span>
-      );
-    }
-    if (ch === '^') {
-      return (
-        <span
-          key={idx}
-          style={{ backgroundColor: shadowVar, color: fgVar, fontWeight: weight }}
-        >
-          ▀
-        </span>
-      );
-    }
-    if (ch === '~') {
-      return (
-        <span key={idx} style={{ color: shadowVar, fontWeight: weight }}>
-          ▀
-        </span>
-      );
-    }
-    return (
-      <span key={idx} style={{ color: fgVar, fontWeight: weight }}>
-        {ch}
-      </span>
-    );
-  });
-}
-
-function OfficialTuiLogo() {
+function OfficialTuiLogo({ className = 'h-[52px] sm:h-[60px] w-auto' }: { className?: string }) {
   return (
     <div className="flex flex-col items-center select-none">
-      <div className="mb-1.5 flex items-center gap-2 text-[11px] tracking-[0.22em] uppercase text-[var(--oc-fg-muted)]">
-        <span className="font-bold text-[var(--oc-build)]">opaslabs</span>
-        <span className="text-[var(--oc-fg-dim)]">·</span>
-        <span>opencode tui</span>
-      </div>
-      <div
-        className="font-mono text-[12px] sm:text-[14px] leading-[1.05] tracking-normal whitespace-pre"
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 234 42"
+        fill="none"
+        shapeRendering="crispEdges"
         aria-label="opencode"
+        role="img"
+        className={className}
       >
-        {TUI_LOGO_LEFT.map((leftLine, rowIdx) => (
-          <div key={rowIdx} className="flex">
-            <span>{renderTuiLogoLine(leftLine, 'left')}</span>
-            <span> </span>
-            <span>{renderTuiLogoLine(TUI_LOGO_RIGHT[rowIdx], 'right')}</span>
-          </div>
-        ))}
-      </div>
+        {/* Left ("open") 25% shadow cells (`_`, `^`, `~`) */}
+        <path d="M18 30H6V18H18V30Z" fill="var(--oc-shadow-left)" />
+        <path d="M48 30H36V18H48V30Z" fill="var(--oc-shadow-left)" />
+        <path d="M84 24V30H66V24H84Z" fill="var(--oc-shadow-left)" />
+        <path d="M108 36H96V18H108V36Z" fill="var(--oc-shadow-left)" />
+
+        {/* Left ("open") foreground block cells (`t.text.muted`) */}
+        <path d="M18 12H6V30H18V12ZM24 36H0V6H24V36Z" fill="var(--oc-fg-muted)" />
+        <path d="M36 30H48V12H36V30ZM54 36H36V42H30V6H54V36Z" fill="var(--oc-fg-muted)" />
+        <path d="M84 24H66V30H84V36H60V6H84V24ZM66 18H78V12H66V18Z" fill="var(--oc-fg-muted)" />
+        <path d="M108 12H96V36H90V6H108V12ZM114 36H108V12H114V36Z" fill="var(--oc-fg-muted)" />
+
+        {/* Right ("code") 25% shadow cells (`_`, `^`) */}
+        <path d="M144 30H126V18H144V30Z" fill="var(--oc-shadow-right)" />
+        <path d="M168 30H156V18H168V30Z" fill="var(--oc-shadow-right)" />
+        <path d="M198 30H186V18H198V30Z" fill="var(--oc-shadow-right)" />
+        <path d="M234 24V30H216V24H234Z" fill="var(--oc-shadow-right)" />
+
+        {/* Right ("code") foreground block cells (`t.text.base`) */}
+        <path d="M144 12H126V30H144V36H120V6H144V12Z" fill="var(--oc-fg)" />
+        <path d="M168 12H156V30H168V12ZM174 36H150V6H174V36Z" fill="var(--oc-fg)" />
+        <path d="M198 12H186V30H198V12ZM204 36H180V6H198V0H204V36Z" fill="var(--oc-fg)" />
+        <path d="M216 12V18H228V12H216ZM234 24H216V30H234V36H210V6H234V24Z" fill="var(--oc-fg)" />
+      </svg>
     </div>
   );
 }
@@ -573,7 +536,43 @@ export default function App() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Strip out any stale "Failed to fetch" broken turns from previous sessions
+          const cleaned = parsed.map((t: ChatThread) => {
+            if (!Array.isArray(t.messages) || t.messages.length === 0) return t;
+            const filtered: ChatMessage[] = [];
+            for (let i = 0; i < t.messages.length; i++) {
+              const cur = t.messages[i];
+              const next = t.messages[i + 1];
+              if (
+                cur.role === 'user' &&
+                next &&
+                next.role === 'assistant' &&
+                !next.content?.trim() &&
+                next.error &&
+                /failed to fetch|connection interrupted/i.test(next.error)
+              ) {
+                i++; // skip broken user+assistant pair
+                continue;
+              }
+              if (
+                cur.role === 'assistant' &&
+                !cur.content?.trim() &&
+                cur.error &&
+                /failed to fetch|connection interrupted/i.test(cur.error)
+              ) {
+                continue;
+              }
+              filtered.push(cur);
+            }
+            return {
+              ...t,
+              title: filtered.length === 0 ? 'New session' : t.title,
+              messages: filtered
+            };
+          });
+          return cleaned;
+        }
       }
     } catch {
       // ignore storage errors
@@ -638,19 +637,35 @@ export default function App() {
 
   // Automatic static host detection (github.io, custom static hosts) + remote OpenCode gateway URL
   const [apiBaseUrl, setApiBaseUrl] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      // Always use same-origin /api/* on local dev, Cloud Run (.run.app), and Vercel (.vercel.app)
+      if (
+        host === 'localhost' ||
+        host === '127.0.0.1' ||
+        host.endsWith('.run.app') ||
+        host.endsWith('.vercel.app')
+      ) {
+        try {
+          localStorage.removeItem(GATEWAY_STORAGE_KEY);
+        } catch {
+          // ignore
+        }
+        return '';
+      }
+      if (
+        host.endsWith('github.io') ||
+        host.endsWith('pages.dev') ||
+        host.endsWith('netlify.app')
+      ) {
+        return DEFAULT_CLOUD_GATEWAY;
+      }
+    }
     try {
       const saved = localStorage.getItem(GATEWAY_STORAGE_KEY);
       if (saved !== null) return saved.replace(/\/+$/, '');
     } catch {
       // ignore
-    }
-    if (
-      typeof window !== 'undefined' &&
-      (window.location.hostname.endsWith('github.io') ||
-        window.location.hostname.endsWith('pages.dev') ||
-        window.location.hostname.endsWith('netlify.app'))
-    ) {
-      return DEFAULT_CLOUD_GATEWAY;
     }
     return '';
   });
@@ -712,30 +727,21 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     async function loadModels() {
-      try {
-        const res = await fetch(buildApiUrl('/api/models'));
-        const contentType = res.headers.get('content-type') || '';
-        if (!res.ok || !contentType.includes('application/json')) {
-          throw new Error('Static host detected');
-        }
-        const data = await res.json();
-        if (!cancelled && Array.isArray(data?.models) && data.models.length > 0) {
-          setModels(data.models);
-        }
-      } catch {
-        // When hosted statically on Vercel / github.io without a local daemon, fallback to live Cloud Gateway
-        if (!apiBaseUrl) {
-          try {
-            const fallbackRes = await fetch(`${DEFAULT_CLOUD_GATEWAY}/api/models`);
-            if (fallbackRes.ok) {
-              const fallbackData = await fallbackRes.json();
-              if (!cancelled && Array.isArray(fallbackData?.models)) {
-                setApiBaseUrl(DEFAULT_CLOUD_GATEWAY);
-                setModels(fallbackData.models);
-              }
-            }
-          } catch {
-            // keep embedded default models list
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const res = await fetch(buildApiUrl('/api/models'));
+          const contentType = res.headers.get('content-type') || '';
+          if (!res.ok || !contentType.includes('application/json')) {
+            throw new Error('Models endpoint not ready');
+          }
+          const data = await res.json();
+          if (!cancelled && Array.isArray(data?.models) && data.models.length > 0) {
+            setModels(data.models);
+          }
+          return;
+        } catch {
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 600));
           }
         }
       }
@@ -1041,7 +1047,8 @@ export default function App() {
 
   const handleSendMessage = async (
     overrideText?: string,
-    overrideAgent?: 'build' | 'plan'
+    overrideAgent?: 'build' | 'plan',
+    resetSession = false
   ) => {
     const text = (overrideText ?? inputPrompt).trim();
     if (!text || isStreaming || !activeThread) return;
@@ -1060,6 +1067,7 @@ export default function App() {
     const currentThreadId = activeThread.id;
     const currentModel = selectedModel;
     const currentAgent = overrideAgent ?? activeThread.agent;
+    const sessionIdToUse = resetSession ? undefined : activeThread.opencodeSessionID;
 
     if (!overrideText) setInputPrompt('');
     setActiveNav('workspace');
@@ -1092,6 +1100,7 @@ export default function App() {
 
     updateThread(currentThreadId, (t) => ({
       ...t,
+      opencodeSessionID: resetSession ? undefined : t.opencodeSessionID,
       agent: currentAgent,
       title: t.messages.length === 0 ? text.slice(0, 48) : t.title,
       updatedAt: Date.now(),
@@ -1103,33 +1112,48 @@ export default function App() {
     abortControllerRef.current = controller;
 
     try {
-      let response = await fetch(buildApiUrl('/api/chat/stream'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          modelId: currentModel.id,
-          sessionID: activeThread.opencodeSessionID,
-          agent: currentAgent
-        }),
-        signal: controller.signal
-      });
+      let response: Response | null = null;
+      let lastFetchErr: any = null;
 
-      const contentType = response.headers.get('content-type') || '';
-      if ((!response.ok || contentType.includes('text/html')) && !apiBaseUrl) {
-        // Automatic fallback for static Vercel / GitHub Pages deployments
-        setApiBaseUrl(DEFAULT_CLOUD_GATEWAY);
-        response = await fetch(`${DEFAULT_CLOUD_GATEWAY}/api/chat/stream`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: text,
-            modelId: currentModel.id,
-            sessionID: activeThread.opencodeSessionID,
-            agent: currentAgent
-          }),
-          signal: controller.signal
-        });
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const res = await fetch(buildApiUrl('/api/chat/stream'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: text,
+              modelId: currentModel.id,
+              sessionID: attempt === 0 ? sessionIdToUse : undefined,
+              agent: currentAgent
+            }),
+            signal: controller.signal
+          });
+          if (res.ok && res.body) {
+            response = res;
+            break;
+          }
+          // Retry on 502/503/504 warmup responses
+          if ([502, 503, 504].includes(res.status) && attempt < 2) {
+            await new Promise((r) => setTimeout(r, 700));
+            continue;
+          }
+          response = res;
+          break;
+        } catch (fetchErr: any) {
+          if (fetchErr?.name === 'AbortError') throw fetchErr;
+          lastFetchErr = fetchErr;
+          // If custom apiBaseUrl failed, fall back to same-origin '/api/chat/stream'
+          if (apiBaseUrl) {
+            setApiBaseUrl('');
+          }
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 700));
+          }
+        }
+      }
+
+      if (!response) {
+        throw lastFetchErr || new Error('Unable to reach OpenCode runtime');
       }
 
       if (!response.ok || !response.body) {
@@ -1316,6 +1340,42 @@ export default function App() {
     } finally {
       setIsStreaming(false);
     }
+  };
+
+  const handleRetryMessage = (failedAssistantMsgId: string) => {
+    if (!activeThread || isStreaming) return;
+    const msgs = activeThread.messages;
+    const errIdx = msgs.findIndex((m) => m.id === failedAssistantMsgId);
+    let promptText = '';
+    let promptAgent: 'build' | 'plan' = activeThread.agent;
+    let userMsgIdToRemove: string | null = null;
+
+    if (errIdx > 0 && msgs[errIdx - 1]?.role === 'user') {
+      promptText = msgs[errIdx - 1].content;
+      promptAgent = msgs[errIdx - 1].agent;
+      userMsgIdToRemove = msgs[errIdx - 1].id;
+    } else {
+      const lastUser = [...msgs].reverse().find((m) => m.role === 'user');
+      if (lastUser) {
+        promptText = lastUser.content;
+        promptAgent = lastUser.agent;
+        userMsgIdToRemove = lastUser.id;
+      }
+    }
+
+    if (!promptText) return;
+
+    updateThread(activeThread.id, (t) => ({
+      ...t,
+      opencodeSessionID: undefined,
+      messages: t.messages.filter(
+        (m) => m.id !== failedAssistantMsgId && m.id !== userMsgIdToRemove
+      )
+    }));
+
+    setTimeout(() => {
+      handleSendMessage(promptText, promptAgent, true);
+    }, 10);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -2484,12 +2544,7 @@ export default function App() {
                                 <div className="font-medium">{msg.error}</div>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    const lastUser = [...activeThread.messages]
-                                      .reverse()
-                                      .find((m) => m.role === 'user');
-                                    if (lastUser) handleSendMessage(lastUser.content);
-                                  }}
+                                  onClick={() => handleRetryMessage(msg.id)}
                                   className="mt-1 font-semibold text-[var(--im-link)] underline"
                                 >
                                   Try again
@@ -3251,12 +3306,7 @@ export default function App() {
                           <div className="text-[var(--oc-danger)]">{msg.error}</div>
                           <button
                             type="button"
-                            onClick={() => {
-                              const lastUser = [...activeThread.messages]
-                                .reverse()
-                                .find((m) => m.role === 'user');
-                              if (lastUser) handleSendMessage(lastUser.content);
-                            }}
+                            onClick={() => handleRetryMessage(msg.id)}
                             className="mt-1 text-[11.5px] text-[var(--oc-build)] hover:underline"
                           >
                             retry

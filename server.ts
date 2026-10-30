@@ -7,7 +7,7 @@ import crypto from 'node:crypto';
 
 const PORT = 3000;
 const OPENCODE_PORT = 14090;
-const OPENCODE_PASSWORD = crypto.randomBytes(24).toString('hex');
+const OPENCODE_PASSWORD = 'opencode-local-daemon-v2';
 const OPENCODE_AUTH = 'Basic ' + Buffer.from(`opencode:${OPENCODE_PASSWORD}`).toString('base64');
 const WORKSPACE_DIR = '/tmp/opencode-workspace';
 const OPENCODE_BIN = path.resolve(process.cwd(), 'node_modules/@opencode/cli-linux-x64/bin/opencode');
@@ -28,7 +28,7 @@ const FREE_OPENCODE_MODELS: FreeModelMeta[] = [
   {
     id: 'glm-5.3-flash-free',
     fullId: 'opencode/glm-5.3-flash-free',
-    name: 'GLM-5.3 Flash Free',
+    name: 'GLM-5.3-Flash Free',
     family: 'GLM Flash',
     contextLimit: 1000000,
     outputLimit: 131072,
@@ -48,26 +48,26 @@ const FREE_OPENCODE_MODELS: FreeModelMeta[] = [
     description: 'Fast chain-of-thought software engineering and debugging model on OpenCode Zen.'
   },
   {
+    id: 'big-pickle',
+    fullId: 'opencode/big-pickle',
+    name: 'Big Pickle',
+    family: 'OpenCode Native',
+    contextLimit: 200000,
+    outputLimit: 65536,
+    reasoning: true,
+    speedLabel: '~3.2s latency',
+    description: 'OpenCode Zen flagship free coding model tuned for multi-step agentic workflows.'
+  },
+  {
     id: 'mimo-v2.6-flash-free',
     fullId: 'opencode/mimo-v2.6-flash-free',
-    name: 'MiMo V2.6 Flash Free',
+    name: 'MiMo-V2.6-Flash Free',
     family: 'MiMo Flash',
     contextLimit: 256000,
     outputLimit: 65536,
     reasoning: true,
     speedLabel: '~2.1s latency',
     description: 'Balanced reasoning and code generation specialist with tool execution.'
-  },
-  {
-    id: 'big-pickle',
-    fullId: 'opencode/big-pickle',
-    name: 'Big Pickle (OpenCode Flagship Free)',
-    family: 'OpenCode Native',
-    contextLimit: 200000,
-    outputLimit: 65536,
-    reasoning: true,
-    speedLabel: '~3.8s latency',
-    description: 'OpenCode Zen flagship free coding model tuned for multi-step agentic workflows.'
   },
   {
     id: 'nemotron-3.5-lightning-free',
@@ -79,6 +79,17 @@ const FREE_OPENCODE_MODELS: FreeModelMeta[] = [
     reasoning: true,
     speedLabel: '~1.6s latency',
     description: 'Ultra-low-latency instruction and code synthesis model.'
+  },
+  {
+    id: 'nemotron-3.5-super-vl-free',
+    fullId: 'opencode/nemotron-3.5-super-vl-free',
+    name: 'Nemotron 3.5 Super VL Free',
+    family: 'NVIDIA Nemotron',
+    contextLimit: 256000,
+    outputLimit: 65536,
+    reasoning: true,
+    speedLabel: '~2.0s latency',
+    description: 'Multimodal & high-capacity Nemotron reasoning model on OpenCode Zen.'
   },
   {
     id: 'flint-40b-free',
@@ -99,8 +110,19 @@ const FREE_OPENCODE_MODELS: FreeModelMeta[] = [
     contextLimit: 128000,
     outputLimit: 32768,
     reasoning: false,
-    speedLabel: '~1.4s latency',
+    speedLabel: '~1.2s latency',
     description: 'Direct, non-thinking fast response model for instant answers and snippets.'
+  },
+  {
+    id: 'jev-1.13-free',
+    fullId: 'opencode/jev-1.13-free',
+    name: 'Jev 1.13 Free',
+    family: 'SystemOne',
+    contextLimit: 128000,
+    outputLimit: 32768,
+    reasoning: true,
+    speedLabel: '~1.8s latency',
+    description: 'SystemOne Jev 1.13 free coding and reasoning model on OpenCode Zen.'
   }
 ];
 
@@ -126,6 +148,7 @@ async function ensureWorkspaceInitialized() {
 let opencodeProc: ChildProcess | null = null;
 let daemonReady: Promise<void> | null = null;
 let eventStreamActive = false;
+let daemonRunning = false;
 
 type SessionListener = (event: { type: string; data: any; created?: string }) => void;
 const sessionListeners = new Map<string, Set<SessionListener>>();
@@ -142,30 +165,47 @@ function emitToSession(sessionID: string, event: { type: string; data: any; crea
   }
 }
 
-async function opencodeFetch(pathname: string, init: RequestInit = {}) {
+async function opencodeFetch(pathname: string, init: RequestInit = {}, retryCount = 0): Promise<Response> {
   await startOpenCodeDaemon();
   const headers = new Headers(init.headers || {});
   headers.set('Authorization', OPENCODE_AUTH);
   if (init.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  return fetch(`http://127.0.0.1:${OPENCODE_PORT}${pathname}`, {
-    ...init,
-    headers
-  });
+  try {
+    const res = await fetch(`http://127.0.0.1:${OPENCODE_PORT}${pathname}`, {
+      ...init,
+      headers
+    });
+    if (res.status === 401 && retryCount < 1) {
+      daemonReady = null;
+      daemonRunning = false;
+      await startOpenCodeDaemon(true);
+      return opencodeFetch(pathname, init, retryCount + 1);
+    }
+    return res;
+  } catch (err) {
+    if (retryCount < 1) {
+      daemonReady = null;
+      daemonRunning = false;
+      await startOpenCodeDaemon(true);
+      return opencodeFetch(pathname, init, retryCount + 1);
+    }
+    throw err;
+  }
 }
 
 async function connectDaemonEventBus() {
   if (eventStreamActive) return;
   eventStreamActive = true;
 
-  while (opencodeProc !== null) {
+  while (daemonRunning) {
     try {
       const res = await fetch(`http://127.0.0.1:${OPENCODE_PORT}/api/event`, {
         headers: { Authorization: OPENCODE_AUTH }
       });
       if (!res.ok || !res.body) {
-        await new Promise((r) => setTimeout(r, 500));
+        await new Promise((r) => setTimeout(r, 400));
         continue;
       }
       const reader = res.body.getReader();
@@ -221,18 +261,49 @@ async function connectDaemonEventBus() {
         }
       }
     } catch {
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 400));
     }
   }
   eventStreamActive = false;
 }
 
-function startOpenCodeDaemon(): Promise<void> {
-  if (daemonReady) return daemonReady;
+function startOpenCodeDaemon(forceRestart = false): Promise<void> {
+  if (daemonReady && !forceRestart) return daemonReady;
 
   daemonReady = new Promise<void>(async (resolve, reject) => {
     try {
       await ensureWorkspaceInitialized();
+
+      if (!forceRestart) {
+        // Check if daemon is already listening with our password
+        try {
+          const probe = await fetch(`http://127.0.0.1:${OPENCODE_PORT}/api/event`, {
+            headers: { Authorization: OPENCODE_AUTH },
+            signal: AbortSignal.timeout(800)
+          });
+          if (probe.ok) {
+            probe.body?.cancel().catch(() => {});
+            daemonRunning = true;
+            connectDaemonEventBus();
+            resolve();
+            return;
+          }
+        } catch {
+          // Not running or needs fresh spawn
+        }
+      }
+
+      // Kill any stale opencode serve process occupying port 14090 (e.g. from previous random password)
+      try {
+        await new Promise<void>((r) => {
+          const killer = spawn('pkill', ['-f', `opencode serve --port ${OPENCODE_PORT}`]);
+          killer.on('close', () => setTimeout(r, 250));
+          killer.on('error', () => r());
+        });
+      } catch {
+        // ignore
+      }
+
       // Strictly strip any non-OpenCode API keys so OpenCode only uses its own free Zen gateway
       const cleanEnv: NodeJS.ProcessEnv = {
         ...process.env,
@@ -254,14 +325,21 @@ function startOpenCodeDaemon(): Promise<void> {
       );
 
       opencodeProc = proc;
+      daemonRunning = true;
       let resolved = false;
+
+      const finishReady = () => {
+        if (resolved) return;
+        resolved = true;
+        daemonRunning = true;
+        connectDaemonEventBus();
+        resolve();
+      };
 
       const onData = (chunk: Buffer) => {
         const text = chunk.toString();
         if (!resolved && text.includes('listening on')) {
-          resolved = true;
-          connectDaemonEventBus();
-          resolve();
+          finishReady();
         }
       };
 
@@ -269,23 +347,42 @@ function startOpenCodeDaemon(): Promise<void> {
       proc.stderr?.on('data', onData);
 
       proc.on('exit', () => {
-        opencodeProc = null;
-        daemonReady = null;
-        eventStreamActive = false;
+        if (opencodeProc === proc) {
+          opencodeProc = null;
+          daemonReady = null;
+          daemonRunning = false;
+          eventStreamActive = false;
+        }
         if (!resolved) {
           reject(new Error('OpenCode daemon exited before listening'));
         }
       });
 
-      setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          connectDaemonEventBus();
-          resolve();
+      // Poll HTTP readiness every 150ms
+      for (let i = 0; i < 40 && !resolved; i++) {
+        await new Promise((r) => setTimeout(r, 150));
+        if (resolved) break;
+        try {
+          const probe = await fetch(`http://127.0.0.1:${OPENCODE_PORT}/api/event`, {
+            headers: { Authorization: OPENCODE_AUTH },
+            signal: AbortSignal.timeout(500)
+          });
+          if (probe.ok) {
+            probe.body?.cancel().catch(() => {});
+            finishReady();
+            break;
+          }
+        } catch {
+          // keep polling
         }
-      }, 6000);
+      }
+
+      if (!resolved) {
+        finishReady();
+      }
     } catch (err) {
       daemonReady = null;
+      daemonRunning = false;
       reject(err);
     }
   });
@@ -431,6 +528,7 @@ async function startServer() {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders?.();
+    res.write(': connected\n\n');
 
     const sendEvent = (payload: Record<string, any>) => {
       if (res.writableEnded) return;
