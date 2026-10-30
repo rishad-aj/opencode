@@ -3,17 +3,484 @@
 @layer base {
   :root {
     --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   body {
-    font-family: var(--font-sans);
-    background-color: #0B0F17;
-    color: #F1F5F9;
+    font-family: var(--font-mono);
+    background-color: #0a0a0a;
+    color: #ededed;
+    overflow: hidden;
   }
 
-  code, pre, .font-mono {
+  code,
+  pre,
+  .font-mono {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
+}
+
+/* ==========================================================================
+   1. Official OpenCode v2.2.1 TUI Themes (Default: opencode)
+   ========================================================================== */
+
+.oc-app {
+  color-scheme: dark;
+  --oc-bg: #0a0a0a;
+  --oc-panel: #141414;
+  --oc-surface: #141414;
+  --oc-elevated: #1e1e1e;
+  --oc-border: #3c3c3c;
+  --oc-border-strong: #484848;
+  --oc-fg: #eeeeee;
+  --oc-fg-muted: #808080;
+  --oc-fg-dim: #4c4c4c;
+  --oc-build: #fab283;
+  --oc-plan: #9d7cd8;
+  --oc-green: #7fd88f;
+  --oc-warning: #f5a742;
+  --oc-danger: #e06c75;
+  --oc-cyan: #56b6c2;
+  --oc-code-bg: #141414;
+  --oc-shadow-left: #272727;
+  --oc-shadow-right: #424242;
+
+  font-family: var(--font-mono);
+  background-color: var(--oc-bg);
+  color: var(--oc-fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.oc-app[data-oc-palette="tokyonight"] {
+  --oc-bg: #1a1b26;
+  --oc-panel: #1e2030;
+  --oc-surface: #1e2030;
+  --oc-elevated: #222436;
+  --oc-border: #3b4261;
+  --oc-border-strong: #545c7e;
+  --oc-fg: #c8d3f5;
+  --oc-fg-muted: #828bb8;
+  --oc-fg-dim: #545c7e;
+  --oc-build: #82aaff;
+  --oc-plan: #c099ff;
+  --oc-green: #c3e88d;
+  --oc-warning: #ffc777;
+  --oc-danger: #ff757f;
+  --oc-cyan: #86e1fc;
+  --oc-code-bg: #1e2030;
+  --oc-shadow-left: #34374c;
+  --oc-shadow-right: #484d69;
+}
+
+.oc-app[data-oc-palette="catppuccin"] {
+  --oc-bg: #1e1e2e;
+  --oc-panel: #181825;
+  --oc-surface: #181825;
+  --oc-elevated: #313244;
+  --oc-border: #45475a;
+  --oc-border-strong: #585b70;
+  --oc-fg: #cdd6f4;
+  --oc-fg-muted: #bac2de;
+  --oc-fg-dim: #6c7086;
+  --oc-build: #89b4fa;
+  --oc-plan: #cba6f7;
+  --oc-green: #a6e3a1;
+  --oc-warning: #f9e2af;
+  --oc-danger: #f38ba8;
+  --oc-cyan: #89dceb;
+  --oc-code-bg: #181825;
+  --oc-shadow-left: #44465a;
+  --oc-shadow-right: #4a4c60;
+}
+
+.oc-app[data-oc-palette="gruvbox"] {
+  --oc-bg: #282828;
+  --oc-panel: #32302f;
+  --oc-surface: #32302f;
+  --oc-elevated: #3c3836;
+  --oc-border: #504945;
+  --oc-border-strong: #665c54;
+  --oc-fg: #ebdbb2;
+  --oc-fg-muted: #a89984;
+  --oc-fg-dim: #7c6f64;
+  --oc-build: #83a598;
+  --oc-plan: #d3869b;
+  --oc-green: #b8bb26;
+  --oc-warning: #fabd2f;
+  --oc-danger: #fb4934;
+  --oc-cyan: #8ec07c;
+  --oc-code-bg: #1d2021;
+  --oc-shadow-left: #48443f;
+  --oc-shadow-right: #59554a;
+}
+
+.oc-app[data-oc-palette="dracula"] {
+  --oc-bg: #282a36;
+  --oc-panel: #21222c;
+  --oc-surface: #21222c;
+  --oc-elevated: #44475a;
+  --oc-border: #44475a;
+  --oc-border-strong: #6272a4;
+  --oc-fg: #f8f8f2;
+  --oc-fg-muted: #6272a4;
+  --oc-fg-dim: #44475a;
+  --oc-build: #bd93f9;
+  --oc-plan: #ff79c6;
+  --oc-green: #50fa7b;
+  --oc-warning: #f1fa8c;
+  --oc-danger: #ff5555;
+  --oc-cyan: #8be9fd;
+  --oc-code-bg: #21222c;
+  --oc-shadow-left: #364152;
+  --oc-shadow-right: #5c5e65;
+}
+
+.oc-app[data-oc-palette="vesper"] {
+  --oc-bg: #101010;
+  --oc-panel: #161616;
+  --oc-surface: #161616;
+  --oc-elevated: #1c1c1c;
+  --oc-border: #282828;
+  --oc-border-strong: #383838;
+  --oc-fg: #ffffff;
+  --oc-fg-muted: #a0a0a0;
+  --oc-fg-dim: #505050;
+  --oc-build: #ffc799;
+  --oc-plan: #99ffe4;
+  --oc-green: #99ffe4;
+  --oc-warning: #ffc799;
+  --oc-danger: #ff8080;
+  --oc-cyan: #99ffe4;
+  --oc-code-bg: #161616;
+  --oc-shadow-left: #343434;
+  --oc-shadow-right: #4c4c4c;
+}
+
+.oc-app[data-oc-palette="vercel"] {
+  --oc-bg: #000000;
+  --oc-panel: #0a0a0a;
+  --oc-surface: #0a0a0a;
+  --oc-elevated: #171717;
+  --oc-border: #262626;
+  --oc-border-strong: #333333;
+  --oc-fg: #ededed;
+  --oc-fg-muted: #888888;
+  --oc-fg-dim: #444444;
+  --oc-build: #0070f3;
+  --oc-plan: #52a8ff;
+  --oc-green: #46a758;
+  --oc-warning: #ffb224;
+  --oc-danger: #e5484d;
+  --oc-cyan: #0070f3;
+  --oc-code-bg: #0a0a0a;
+  --oc-shadow-left: #222222;
+  --oc-shadow-right: #3b3b3b;
+}
+
+body:has(.oc-app) {
+  background-color: var(--oc-bg, #0a0a0a);
+}
+
+/* ==========================================================================
+   2. iOS (iMessage / Apple Messages) Theme — Bug-fixed
+   ========================================================================== */
+
+.im-app {
+  color-scheme: light;
+
+  /* surfaces */
+  --im-bg: #ffffff;
+  --im-surface: #ffffff;
+  --im-bar: #f9f9fb;
+  --im-fill: #f2f2f7;
+  --im-fill-strong: #e5e5ea;
+  --im-glass: rgba(255, 255, 255, 0.85);
+
+  /* bubbles — background AND foreground are paired */
+  --im-in-bg: #e9e9eb;
+  --im-in-fg: #000000;
+  --im-out-bg: #0b84ff;
+  --im-out-fg: #ffffff;
+
+  /* text */
+  --im-label: #000000;
+  --im-label-2: #6c6c70;
+  --im-label-3: #aeaeb2;
+  --im-link: #0066cc;
+
+  /* lines & states */
+  --im-sep: rgba(60, 60, 67, 0.13);
+  --im-hover: rgba(0, 0, 0, 0.045);
+  --im-inline-code: rgba(0, 0, 0, 0.075);
+  --im-danger: #ff3b30;
+  --im-danger-text: #c9251c;
+  --im-green: #34c759;
+  --im-green-text: #1f7a34;
+
+  /* code surfaces stay dark in both appearances for readability */
+  --im-code-bg: #1c1c1e;
+  --im-code-fg: #f2f2f7;
+
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Plus Jakarta Sans", "Helvetica Neue", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--im-bg);
+  color: var(--im-label);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.im-app[data-theme="dark"] {
+  color-scheme: dark;
+  --im-bg: #000000;
+  --im-surface: #1c1c1e;
+  --im-bar: #161618;
+  --im-fill: #2c2c2e;
+  --im-fill-strong: #3a3a3c;
+  --im-glass: rgba(22, 22, 24, 0.82);
+  --im-in-bg: #26262a;
+  --im-in-fg: #f2f2f7;
+  --im-out-bg: #0a84ff;
+  --im-out-fg: #ffffff;
+  --im-label: #f2f2f7;
+  --im-label-2: #98989d;
+  --im-label-3: #636366;
+  --im-link: #5ac8fa;
+  --im-sep: rgba(255, 255, 255, 0.14);
+  --im-hover: rgba(255, 255, 255, 0.07);
+  --im-inline-code: rgba(255, 255, 255, 0.14);
+  --im-danger-text: #ff6961;
+  --im-green-text: #30d158;
+  --im-code-bg: #111113;
+  --im-code-fg: #f2f2f7;
+}
+
+@media (prefers-color-scheme: dark) {
+  .im-app[data-theme="auto"] {
+    color-scheme: dark;
+    --im-bg: #000000;
+    --im-surface: #1c1c1e;
+    --im-bar: #161618;
+    --im-fill: #2c2c2e;
+    --im-fill-strong: #3a3a3c;
+    --im-glass: rgba(22, 22, 24, 0.82);
+    --im-in-bg: #26262a;
+    --im-in-fg: #f2f2f7;
+    --im-out-bg: #0a84ff;
+    --im-out-fg: #ffffff;
+    --im-label: #f2f2f7;
+    --im-label-2: #98989d;
+    --im-label-3: #636366;
+    --im-link: #5ac8fa;
+    --im-sep: rgba(255, 255, 255, 0.14);
+    --im-hover: rgba(255, 255, 255, 0.07);
+    --im-inline-code: rgba(255, 255, 255, 0.14);
+    --im-danger-text: #ff6961;
+    --im-green-text: #30d158;
+    --im-code-bg: #111113;
+    --im-code-fg: #f2f2f7;
+  }
+}
+
+/* Keep the page canvas in sync with explicit light/dark/auto mode */
+body:has(.im-app[data-theme="light"]) {
+  background-color: #ffffff;
+}
+body:has(.im-app[data-theme="dark"]) {
+  background-color: #000000;
+}
+body:has(.im-app[data-theme="auto"]) {
+  background-color: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  body:has(.im-app[data-theme="auto"]) {
+    background-color: #000000;
+  }
+}
+
+/* ---------- iOS surfaces ---------- */
+
+.im-glass {
+  background: var(--im-glass);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+.im-card {
+  background: var(--im-surface);
+  border: 1px solid var(--im-sep);
+}
+
+.im-card-row + .im-card-row {
+  border-top: 1px solid var(--im-sep);
+}
+
+/* ---------- iOS bubbles ---------- */
+
+.im-bubble {
+  position: relative;
+  background: var(--bubble-bg);
+  color: var(--bubble-fg);
+  min-width: 0;
+  width: fit-content;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  overflow: visible;
+}
+
+.im-bubble-out {
+  --bubble-bg: var(--im-out-bg);
+  --bubble-fg: var(--im-out-fg);
+  box-shadow: 0 1px 2px rgba(11, 132, 255, 0.18);
+}
+
+.im-bubble-in {
+  --bubble-bg: var(--im-in-bg);
+  --bubble-fg: var(--im-in-fg);
+  box-shadow: none;
+}
+
+.im-bubble .im-md {
+  color: inherit;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.im-bubble-in .im-md a {
+  color: var(--im-link);
+}
+
+.im-bubble-out .im-md a {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.im-bubble .im-md pre,
+.im-bubble .im-md pre * {
+  color: var(--im-code-fg);
+}
+
+/* ---------- iOS bubble tails (flush corner attachment) ---------- */
+
+.im-tail {
+  position: absolute;
+  bottom: 0;
+  width: 11px;
+  height: 16px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.im-tail-out {
+  right: -5px;
+}
+
+.im-tail-in {
+  left: -5px;
+  transform: scaleX(-1);
+}
+
+.im-tail path {
+  fill: var(--bubble-bg);
+}
+
+/* ---------- iOS composer ---------- */
+
+.im-composer-dock {
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+.im-composer-shell {
+  background: var(--im-surface);
+  border: 1px solid var(--im-sep);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.im-composer-shell:focus-within {
+  border-color: color-mix(in srgb, var(--im-out-bg) 55%, transparent);
+}
+
+/* ---------- motion ---------- */
+
+@keyframes imBounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+.im-dot {
+  animation: imBounce 1.2s infinite;
+}
+
+@keyframes imRise {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.im-rise {
+  animation: imRise 0.18s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .im-rise,
+  .im-dot {
+    animation: none !important;
+  }
+}
+
+/* ---------- scrollbars ---------- */
+
+.im-scroll,
+.oc-scroll {
+  overscroll-behavior: contain;
+}
+
+.oc-app ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.oc-app ::-webkit-scrollbar-thumb {
+  background: var(--oc-border-strong, #303030);
+  border-radius: 3px;
+}
+
+.oc-app ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.im-app ::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.im-app ::-webkit-scrollbar-thumb {
+  background: var(--im-label-3, #aeaeb2);
+  border-radius: 999px;
+}
+
+.im-app ::-webkit-scrollbar-track {
+  background: transparent;
 }
